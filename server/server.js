@@ -1,62 +1,109 @@
 const express = require('express');
 const http = require('http');
-const socketIO = require('socket.io');
-const mysql = require('mysql2');
+const { Server } = require('socket.io');
 require('dotenv').config();
+// const mysql = require("mysql2");
+const dbUtil = require("./db/db");
 
 const app = express();
 const server = http.createServer(app);
-const io = socketIO(server);
-
-const db = mysql.createConnection({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
 });
 
-db.connect(err => {
-  if (err) {
-    console.error('Database connection failed:', err);
-  } else {
-    console.log('Connected to the database');
-  }
+server.listen(process.env.PORT, () => {
+  console.log(`Server is listening on Port: ${process.env.PORT}`);
 });
 
-// Express route for serving the Vue.js app
-app.use(express.static('public'));
+const mentorSocket = new Map();
+
+const dbPool = dbUtil.promisePool;
 
 // Socket.io connection handling
-io.on('connection', socket => {
+io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  // Handle lobby events
-  socket.on('joinLobby', () => {
-    socket.join('lobby');
-    io.to('lobby').emit('updateLobby', getSessionsFromDatabase());
+  // Handle user choose code block events
+  socket.on('joinCodeBlock', (codeBlockTitle) => {
+
+    console.log(`A user ${socket.id} choose code mission: ${codeBlockTitle}`);
+
+    if (mentorSocket.has(codeBlockTitle)){
+        // student accessed the room
+        socket.emit("isMentor", false);
+
+        socket.emit("studentJoin", true);
+        mentorSocket.get(codeBlockTitle).emit("studentJoin", true)
+    
+        console.log(`A user ${socket.id} is Student in ${codeBlockTitle} room`);
+
+    }
+    else {
+        // mentor accessed the room
+        socket.emit("isMentor", true);
+
+        console.log(`A user ${socket.id} is Mentor in ${codeBlockTitle} room`);
+
+        mentorSocket.set(codeBlockTitle, socket);
+    }
   });
 
-  socket.on('selectSession', sessionId => {
-    // Handle session selection, emit events accordingly
-  });
+    socket.on("changeCode", async (code, codeBlockTitle) => {
+      try {
+        const [rows] = await dbPool.query('SELECT code FROM solution WHERE title = ?', [codeBlockTitle]);
 
-  // Handle code editing events
-  socket.on('codeUpdate', data => {
-    // Update the code in the database and emit to other clients
+        const codeClean = cleanCode(code);
+        const dataCodeClean = rows[0].code;
+        const isCodeEqual = codeClean === dataCodeClean;
+        
+        mentorSocketRoom = mentorSocket.get(codeBlockTitle);
+        if (mentorSocketRoom) {
+          mentorSocketRoom.emit("presentCodeToMentor", code);
+        }
+        if (isCodeEqual){
+          socket.emit('solved', isCodeEqual)
+        }
+      } catch (error) {
+        console.error('Error checking from the database:', error);
+      }
+    });
+  
+  socket.on("mentorLeaveRoom", (mentorId, codeBlockName) => {
+    console.log(`Mentor ${mentorId} leaving room ${codeBlockName}`);
+
+    // Remove mentor from mentorSocket map
+    mentorSocket.delete(codeBlockName);
+  
+    // Broadcast to inform other clients that the mentor left room
+    socket.broadcast.emit("mentorLeftRoom", codeBlockName);
   });
 
   socket.on('disconnect', () => {
+
     console.log('Client disconnected:', socket.id);
+
+    mentorSocket.forEach((value, key) => {
+      if (value.id === socket.id) {
+
+        console.log(`Removing mentor entry for socket.id ${socket.id}`);
+
+        mentorSocket.delete(key);
+      }
+    });
   });
-});
 
-// Helper function to fetch sessions from the database
-function getSessionsFromDatabase() {
-  // Fetch sessions from the database
-  // Return an array of sessions
-}
-
-const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  function cleanCode(inputString) {
+    // Remove spaces and newline characters(
+    let cleanedString = inputString.replace(/\/\/ Your code here/g, '');
+  
+    // Remove '// Your code here' comments
+    cleanedString = cleanedString.replace(/[\s\n]/g, '');
+    
+    return cleanedString;
+  }
+  
+  
 });
