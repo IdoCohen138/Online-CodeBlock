@@ -1,7 +1,7 @@
 
 module.exports = {
     devServer: {
-        host: 'client-production-9cd7.up.railway.app', 
+        host: 'localhost', 
         port: 8080, 
     },
 };
