@@ -1,21 +1,21 @@
 const express = require('express');
-const http = require('http');
+// const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 const dbUtil = require("./db/db");
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
+// const app = express();
+// const server = http.createServer(app);
+const io = new Server(process.env.PORT, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
   },
 });
 
-server.listen(process.env.PORT, () => {
-  console.log(`Server is listening on Port: ${process.env.PORT}`);
-});
+// server.listen(process.env.PORT, () => {
+//   console.log(`Server is listening on Port: ${process.env.PORT}`);
+// });
 
 const mentorSocket = new Map();
 
