@@ -85,7 +85,9 @@
       },
     },
     created() {
+      console.log("lobbyCreated");
       this.socket = io(socketServerUrl);
+      console.log(this.socket);
   
       this.socket.on("isMentor", (val) => {
         this.isMentor = val;
