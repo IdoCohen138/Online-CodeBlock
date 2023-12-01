@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
-// const mysql = require("mysql2");
 const dbUtil = require("./db/db");
 
 const app = express();
@@ -22,17 +21,14 @@ const mentorSocket = new Map();
 
 const dbPool = dbUtil.promisePool;
 
-// Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  // Handle user choose code block events
   socket.on('joinCodeBlock', (codeBlockTitle) => {
 
     console.log(`A user ${socket.id} choose code mission: ${codeBlockTitle}`);
 
     if (mentorSocket.has(codeBlockTitle)){
-        // student accessed the room
         socket.emit("isMentor", false);
 
         socket.emit("studentJoin", true);
@@ -42,7 +38,6 @@ io.on('connection', (socket) => {
 
     }
     else {
-        // mentor accessed the room
         socket.emit("isMentor", true);
 
         console.log(`A user ${socket.id} is Mentor in ${codeBlockTitle} room`);
@@ -74,10 +69,8 @@ io.on('connection', (socket) => {
   socket.on("mentorLeaveRoom", (mentorId, codeBlockName) => {
     console.log(`Mentor ${mentorId} leaving room ${codeBlockName}`);
 
-    // Remove mentor from mentorSocket map
     mentorSocket.delete(codeBlockName);
   
-    // Broadcast to inform other clients that the mentor left room
     socket.broadcast.emit("mentorLeftRoom", codeBlockName);
   });
 
@@ -96,10 +89,8 @@ io.on('connection', (socket) => {
   });
 
   function cleanCode(inputString) {
-    // Remove spaces and newline characters(
     let cleanedString = inputString.replace(/\/\/ Your code here/g, '');
   
-    // Remove '// Your code here' comments
     cleanedString = cleanedString.replace(/[\s\n]/g, '');
     
     return cleanedString;

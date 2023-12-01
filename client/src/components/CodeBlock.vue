@@ -16,17 +16,17 @@
             class="code-textarea"
           ></textarea>
         </div>
-        <div v-else ref="codeContainer" >
+        <div v-else ref="codeContainer" class="styleForContainer">
         </div>
       </div>
       <div v-if="solved">
-        <p>{{"😊"}}</p>
+        <p> well done!{{"😊"}}</p>
       </div>
     </div>
 </template>
   
 <script>
-  import 'highlight.js/styles/github.css'; // Choose a style from the highlight.js styles
+  import 'highlight.js/styles/atom-one-light.css'; 
   import hljs from 'highlight.js';
 
   
@@ -68,6 +68,9 @@
           const codeContent = this.mentorCode ;
           codeContainer.innerHTML = codeContent.replace(/\n/g, '<br>');
           codeContainer.style.whiteSpace = 'pre-wrap'; 
+          codeContainer.style.textAlign = 'left';
+          codeContainer.style.width = '30%';
+          codeContainer.style.margin = '0 auto';
           hljs.highlightBlock(codeContainer);
       }
   },
@@ -92,5 +95,14 @@
 </script>
   
 <style scoped>
+  .code-container {
+    display: flex;
+    justify-content: center;
+    margin: 0 auto; 
+  }
+
+  .code-container code {
+    text-align: left;
+  }
+
 </style>
-  

@@ -1,7 +1,7 @@
 
 <template>
   <div class="lobby">
-    <div v-if="showCode">
+    <div class="center-container" v-if="showCode">
       <CodeBlock
         :socket="socket"
         :codeBlockName="codeBlockName"
@@ -14,8 +14,8 @@
       </div>
     </div>
 
-    <div v-else>
-      <h1 class="title">Please choose code mission:</h1>
+    <div class="center-container" v-else>
+      <h1 class="title">Choose code mission:</h1>
       <div class="button-container">
         <button
           v-for="(label, index) in codeBlockOptions"
@@ -85,7 +85,6 @@
       },
     },
     created() {
-      // Initialize the socket connection when the component is created
       this.socket = io(socketServerUrl);
   
       this.socket.on("isMentor", (val) => {
@@ -96,11 +95,8 @@
         this.studentJoin = true
       });
 
-      // Listen for the mentorLeftRoom event
       this.socket.on("mentorLeftRoom", (codeBlockName) => {
-      // Check if the mentor who left is the current mentor in the CodeBlock
       if (codeBlockName === this.codeBlockName) {
-        // Hide the CodeBlock component
         this.showCode = false;
         this.isMentor = false;
         this.codeBlockName = "";
@@ -119,8 +115,11 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  justify-content: center;
 }
-
+.center-container {
+  text-align: center;
+}
 .modern-button {
   padding: 10px 20px;
   background-color: #3498db;
